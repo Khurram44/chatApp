@@ -31,7 +31,7 @@ const MyChats = ({ fetchAgain }) => {
 
       const { data } = await axios.get("http://localhost:4500/chat/group/fetch", config);
       setChats(data);
-      console.log(data,config)
+      console.log(data, config)
     } catch (error) {
 
       console.log(error)
@@ -52,6 +52,19 @@ const MyChats = ({ fetchAgain }) => {
     // eslint-disable-next-line
   }, [fetchAgain]);
 
+  const getUnreadCount = (chat) => {
+    // Check if loggedUser exists
+    if (!loggedUser.data._id) {
+      console.log("No logged-in user found");
+      return 0;
+    }
+    const userInChat = chat.users.find((u) => u._id === loggedUser.data._id);
+  
+      return userInChat ? userInChat.unreadCount : 0;
+  };
+  
+  
+  
   return (
     <Box
       d={{ base: selectedChat ? "none" : "flex", md: "flex" }}
@@ -94,42 +107,47 @@ const MyChats = ({ fetchAgain }) => {
         borderRadius="lg"
         overflowY="hidden"
       >
-       {chats ? (
-        <Stack overflowY="scroll">
-          {chats.map((chat) => (
-            <Box
-              onClick={() => setSelectedChat(chat)}
-              cursor="pointer"
-              bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
-              color={selectedChat === chat ? "white" : "black"}
-              px={3}
-              py={2}
-              borderRadius="lg"
-              key={chat._id}
-            >
-              <Text>
-                {!chat.isGroupChat
-                  ? getSender(loggedUser, chat.users)
-                  : chat.chatName}
-              </Text>
-              {chat.latestMessage && (
-                <Text fontSize="xs">
-                  <b>{chat.latestMessage.sender.name} : </b>
-                  {chat.latestMessage.isImage ||
-                  chat.latestMessage.isVideo ||
-                  chat.latestMessage.isDocument
-                    ? splitUrlAndGetName(chat.latestMessage.content)
-                    : chat.latestMessage.content.length > 50
-                    ? chat.latestMessage.content.substring(0, 50) + "..."
-                    : chat.latestMessage.content}
+        {chats ? (
+          <Stack overflowY="scroll">
+            {chats.map((chat) => (
+              <Box
+                onClick={() => setSelectedChat(chat)}
+                cursor="pointer"
+                bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
+                color={selectedChat === chat ? "white" : "black"}
+                px={3}
+                py={2}
+                borderRadius="lg"
+                key={chat._id}
+              >
+                <Text>
+                  {!chat.isGroupChat
+                    ? getSender(loggedUser, chat.users)
+                    : chat.chatName}
                 </Text>
-              )}
-            </Box>
-          ))}
-        </Stack>
-      ) : (
-        <ChatLoading />
-      )}
+                {/* Display unread count for each user in the group */}
+                <Text style={{ fontWeight: "bold", color: "blue", marginLeft: "10px" }}>
+                  Unread: {getUnreadCount(chat)}
+                </Text>
+
+                {chat.latestMessage && (
+                  <Text fontSize="xs">
+                    <b>{chat.latestMessage.sender.name} : </b>
+                    {chat.latestMessage.isImage ||
+                      chat.latestMessage.isVideo ||
+                      chat.latestMessage.isDocument
+                      ? splitUrlAndGetName(chat.latestMessage.content)
+                      : chat.latestMessage.content.length > 50
+                        ? chat.latestMessage.content.substring(0, 50) + "..."
+                        : chat.latestMessage.content}
+                  </Text>
+                )}
+              </Box>
+            ))}
+          </Stack>
+        ) : (
+          <ChatLoading />
+        )}
       </Box>
     </Box>
   );
