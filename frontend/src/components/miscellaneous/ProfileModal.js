@@ -46,13 +46,13 @@ const ProfileModal = ({ user, children }) => {
               borderRadius="full"
               boxSize="150px"
               src={user.pic}
-              alt={user.name}
+              alt={user.data.name}
             />
             <Text
               fontSize={{ base: "28px", md: "30px" }}
               fontFamily="Work sans"
             >
-              Email: {user.email}
+              Email: {user.data.email}
             </Text>
           </ModalBody>
           <ModalFooter>

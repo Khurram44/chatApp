@@ -2,6 +2,7 @@ import { Button } from "@chakra-ui/button";
 import { useDisclosure } from "@chakra-ui/hooks";
 import { Input } from "@chakra-ui/input";
 import { Box, Text } from "@chakra-ui/layout";
+import io from "socket.io-client";
 import {
   Menu,
   MenuButton,
@@ -20,7 +21,7 @@ import { Tooltip } from "@chakra-ui/tooltip";
 import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { Avatar } from "@chakra-ui/avatar";
 import { useHistory } from "react-router-dom";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import axios from "axios";
 import { useToast } from "@chakra-ui/toast";
 import ChatLoading from "../ChatLoading";
@@ -31,7 +32,7 @@ import { Effect } from "react-notification-badge";
 import { getSender } from "../../config/ChatLogics";
 import UserListItem from "../userAvatar/UserListItem";
 import { ChatState } from "../../Context/ChatProvider";
-
+var socket
 function SideDrawer() {
   const [search, setSearch] = useState("");
   const [searchResult, setSearchResult] = useState([]);
@@ -46,8 +47,67 @@ function SideDrawer() {
     chats,
     setChats,
   } = ChatState();
-
+const [groups , setGroups]= useState([])
   const toast = useToast();
+  useEffect(() => {
+    socket = io("http://localhost:4500");
+  },[])
+
+  useEffect(()=>{
+    fetchGroups()
+  },[])
+
+  const requestToJoinGroup = (groupId, adminId) => {
+    socket.emit("joinRequest", groupId, adminId);
+  };
+
+  const handleGroupJoinRequest = async(chatId,adminId)=>{
+    requestToJoinGroup(chatId,adminId)
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const result = await axios.post("/chat/group/invite/request",{
+        chatId:chatId
+      },config)
+      toast({
+        title: "Invite sent!",
+        description: result.data.message,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    } catch (error) {
+      toast({
+        title: "Error Occured!",
+        description: error.response.data.error,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom-left",
+      });
+    }
+  }
+  const fetchGroups = async ()=>{
+    try {
+      setLoading(true)
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+      const result = await axios.get("/chat/group/get",config)
+      setGroups(result.data.data)
+      console.log(result.data)
+      setLoading(false)
+    } catch (error) {
+      console.log(error.response.data)
+      setLoading(false)
+    }
+  }
   const { isOpen, onOpen, onClose } = useDisclosure();
   const history = useHistory();
 
@@ -104,7 +164,7 @@ function SideDrawer() {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const { data } = await axios.post(`/api/chat`, { userId }, config);
+      const { data } = await axios.post(`/chat/group/get`, { userId }, config);
 
       if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
       setSelectedChat(data);
@@ -133,16 +193,16 @@ function SideDrawer() {
         p="5px 10px 5px 10px"
         borderWidth="5px"
       >
-        <Tooltip label="Search Users to chat" hasArrow placement="bottom-end">
+        <Tooltip label="Search Channel to join" hasArrow placement="bottom-end">
           <Button variant="ghost" onClick={onOpen}>
             <i className="fas fa-search"></i>
             <Text d={{ base: "none", md: "flex" }} px={4}>
-              Search User
+              Search Group
             </Text>
           </Button>
         </Tooltip>
         <Text fontSize="2xl" fontFamily="Work sans">
-          Talk-A-Tive
+        Darknight Labs
         </Text>
         <div>
           <Menu>
@@ -193,7 +253,7 @@ function SideDrawer() {
       <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
         <DrawerOverlay />
         <DrawerContent>
-          <DrawerHeader borderBottomWidth="1px">Search Users</DrawerHeader>
+          <DrawerHeader borderBottomWidth="1px">Search Channels</DrawerHeader>
           <DrawerBody>
             <Box d="flex" pb={2}>
               <Input
@@ -207,11 +267,11 @@ function SideDrawer() {
             {loading ? (
               <ChatLoading />
             ) : (
-              searchResult?.map((user) => (
+              groups?.map((user) => (
                 <UserListItem
                   key={user._id}
-                  user={user}
-                  handleFunction={() => accessChat(user._id)}
+                  groupInfo={user}
+                  handleFunction={()=> handleGroupJoinRequest(user._id, user.groupAdmin._id)}
                 />
               ))
             )}

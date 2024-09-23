@@ -1,10 +1,9 @@
 import { Avatar } from "@chakra-ui/avatar";
 import { Box, Text } from "@chakra-ui/layout";
 import { ChatState } from "../../Context/ChatProvider";
-
-const UserListItem = ({ groupInfo,handleFunction }) => {
-  const { user } = ChatState();
-  console.log(user)
+import {useState} from "react"
+import { Button } from "@chakra-ui/react";
+const ChatListItem = ({ user,handleFunction }) => {
 
   return (
     <Box
@@ -28,18 +27,21 @@ const UserListItem = ({ groupInfo,handleFunction }) => {
         mr={2}
         size="sm"
         cursor="pointer"
-        name={groupInfo.chatName}
-        src={user.pic}
+        name={user.name}
+        src={user.profilePhoto}
       />
       <Box>
-        <Text>{groupInfo.chatName}</Text>
+        <Text>{user.name}</Text>
         <Text fontSize="xs">
-          <b>Members : </b>
-          {groupInfo.users.length}
+          <b>Username : </b>
+          {user.username}
         </Text>
+      </Box>
+      <Box>
+      {/* <Button colorScheme={add.filter(f=>f.id==user._id).length>0?"green":"blue"} onClick={()=> handleAdd(user._id)}>Add</Button> */}
       </Box>
     </Box>
   );
 };
 
-export default UserListItem;
+export default ChatListItem;
